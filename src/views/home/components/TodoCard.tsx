@@ -1,13 +1,29 @@
-import { ChangeEvent, FC } from "react";
+import { ChangeEvent, FC, useContext } from "react";
 import Image from "next/image";
+import { HomeContext } from "..";
 
 interface TodoCardProps {
   todo: { name: string; isChecked: boolean };
   handleCheckTodo: (e: ChangeEvent<HTMLInputElement>, value: string) => void;
 }
 
-const TodoCard: FC<TodoCardProps> = ({ todo, handleCheckTodo }) => {
+const ComponentA = (props) => {
+  return <ComponentB todos={props.todos} />;
+};
+
+const ComponentB = (props) => {
+  return <ComponentC todos={props.todos} />;
+};
+
+const ComponentC = (props) => {
+  console.log(props.todos);
+  return <div>test</div>;
+};
+
+const TodoCard: FC<TodoCardProps> = ({ todo, todos, handleCheckTodo }) => {
   const { name, isChecked } = todo;
+
+  const context = useContext(HomeContext);
 
   return (
     <div className="p-[20px_24px] shadow-[0px_1px_0px_0px_#E3E4F1] cursor-pointer">
@@ -45,6 +61,8 @@ const TodoCard: FC<TodoCardProps> = ({ todo, handleCheckTodo }) => {
           </span>
         </span>
       </label>
+
+      <ComponentA todos={todos} />
     </div>
   );
 };

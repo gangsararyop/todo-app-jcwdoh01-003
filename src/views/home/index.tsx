@@ -1,24 +1,45 @@
 "use client";
 
-import { ChangeEvent, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  createContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Image from "next/image";
 import TodoCard from "./components/TodoCard";
 import { statuses } from "./static";
+import { useCounterStore } from "@/stores/counterStore";
 
 interface ITodo {
   name: string;
   isChecked: boolean;
 }
 
+export const HomeContext = createContext<{ test: string }>({
+  test: "",
+});
+
 const HomeView = () => {
   const [todos, setTodos] = useState<ITodo[]>([]);
   const [todoInput, setTodoInput] = useState<string>("");
   const [activeStatus, setActiveStatus] = useState("all");
 
+  useEffect(() => {
+    const data = localStorage.getItem("todo");
+
+    setTodos(JSON.parse(data || ""));
+  }, []);
+
   const handleAddTodo = (value: string) => {
     const newTodo: ITodo = { name: value, isChecked: false };
 
-    setTodos([...todos, newTodo]);
+    const data = [...todos, newTodo];
+
+    localStorage.setItem("todo", JSON.stringify(data));
+
+    setTodos(data);
   };
 
   const handleCheckTodo = (e: ChangeEvent<HTMLInputElement>, value: string) => {
@@ -31,6 +52,7 @@ const HomeView = () => {
         }
       });
 
+      localStorage.setItem("todo", JSON.stringify(newTodos));
       setTodos(newTodos);
     } else {
       const newTodos = todos.map((todo) => {
@@ -41,6 +63,7 @@ const HomeView = () => {
         }
       });
 
+      localStorage.setItem("todo", JSON.stringify(newTodos));
       setTodos(newTodos);
     }
   };
@@ -48,6 +71,7 @@ const HomeView = () => {
   const handleRemoveAllTodos = () => {
     const newTodos = todos.filter((todo) => todo.isChecked === false);
 
+    localStorage.setItem("todo", JSON.stringify(newTodos));
     setTodos(newTodos);
   };
 
@@ -65,107 +89,113 @@ const HomeView = () => {
     });
   }, [activeStatus, todos]);
 
+  const count = useCounterStore((state) => state.count);
+
   return (
-    <div className="w-full h-full relative py-[70px]">
-      <div className="w-full h-full max-w-[541px] relative z-10 mx-auto">
-        {/* Judul Todo */}
-        <div className="flex items-center justify-center mb-10">
-          <div className="w-full h-full flex flex-row items-center justify-between gap-6">
-            <h1 className="text-[40px] font-bold tracking-[15px] leading-normal text-white m-0">
-              TODO
-            </h1>
+    <HomeContext.Provider value={{ test: "Ini dari global state context" }}>
+      <h2>{count}</h2>
 
-            <div className="relative w-[25.11px] h-[26px]">
-              <Image
-                src="/static/ic-moon.svg"
-                alt="Icon Moon"
-                fill
-                className="object-cover"
-              />
+      <div className="w-full h-full relative py-[70px]">
+        <div className="w-full h-full max-w-[541px] relative z-10 mx-auto">
+          {/* Judul Todo */}
+          <div className="flex items-center justify-center mb-10">
+            <div className="w-full h-full flex flex-row items-center justify-between gap-6">
+              <h1 className="text-[40px] font-bold tracking-[15px] leading-normal text-white m-0">
+                TODO
+              </h1>
+
+              <div className="relative w-[25.11px] h-[26px]">
+                <Image
+                  src="/static/ic-moon.svg"
+                  alt="Icon Moon"
+                  fill
+                  className="object-cover"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Input Todo */}
-        <div className="flex flex-row items-center gap-6 mb-6 shadow-[0p_35px_50px_-15px_#C2C3D680]">
-          <input
-            type="text"
-            value={todoInput}
-            placeholder="Create a new todo…"
-            className="bg-white w-full rounded-[5px] p-[20px_24px] text-lg"
-            onChange={(e) => {
-              setTodoInput(e.target.value);
-            }}
-          />
+          {/* Input Todo */}
+          <div className="flex flex-row items-center gap-6 mb-6 shadow-[0p_35px_50px_-15px_#C2C3D680]">
+            <input
+              type="text"
+              value={todoInput}
+              placeholder="Create a new todo…"
+              className="bg-white w-full rounded-[5px] p-[20px_24px] text-lg"
+              onChange={(e) => {
+                setTodoInput(e.target.value);
+              }}
+            />
 
-          <button
-            type="button"
-            className="cursor-pointer border-2 h-full p-6"
-            onClick={() => handleAddTodo(todoInput)}
-          >
-            Add
-          </button>
-        </div>
+            <button
+              type="button"
+              className="cursor-pointer border-2 h-full p-6"
+              onClick={() => handleAddTodo(todoInput)}
+            >
+              Add
+            </button>
+          </div>
 
-        {/* List Todo */}
-        <div className="w-full bg-white rounded-[5px] overflow-hidden shadow-[0px_35px_50px_-15px_#C2C3D680]">
-          {Boolean(filteredTodos.length) ? (
-            filteredTodos.map((todo) => (
-              <TodoCard
-                key={todo.name}
-                todo={todo}
-                handleCheckTodo={handleCheckTodo}
-              />
-            ))
-          ) : (
-            <div className="w-full h-[100px] flex items-center justify-center">
-              No Todo
-            </div>
-          )}
+          {/* List Todo */}
+          <div className="w-full bg-white rounded-[5px] overflow-hidden shadow-[0px_35px_50px_-15px_#C2C3D680]">
+            {Boolean(filteredTodos.length) ? (
+              filteredTodos.map((todo) => (
+                <TodoCard
+                  key={todo.name}
+                  todo={todo}
+                  handleCheckTodo={handleCheckTodo}
+                />
+              ))
+            ) : (
+              <div className="w-full h-[100px] flex items-center justify-center">
+                No Todo
+              </div>
+            )}
 
-          <div className="p-[16px_24px] flex flex-row items-center justify-between">
-            <p className="m-0 text-sm font-normal text-[#9495A5]">
-              {filteredTodos.length} items left
-            </p>
-
-            <div className="flex flex-row items-center gap-[19px]">
-              {statuses.map((status) => (
-                <p
-                  key={status.value}
-                  className={`m-0 text-sm font-bold cursor-pointer text-[${
-                    activeStatus === status.value ? "#000" : "#9495A5"
-                  }]`}
-                  onClick={() => {
-                    setActiveStatus(status.value);
-                  }}
-                >
-                  {status.label}
-                </p>
-              ))}
-            </div>
-
-            <div className="cursor-pointer" onClick={handleRemoveAllTodos}>
+            <div className="p-[16px_24px] flex flex-row items-center justify-between">
               <p className="m-0 text-sm font-normal text-[#9495A5]">
-                Clear Completed
+                {filteredTodos.length} items left
               </p>
+
+              <div className="flex flex-row items-center gap-[19px]">
+                {statuses.map((status) => (
+                  <p
+                    key={status.value}
+                    className={`m-0 text-sm font-bold cursor-pointer text-[${
+                      activeStatus === status.value ? "#000" : "#9495A5"
+                    }]`}
+                    onClick={() => {
+                      setActiveStatus(status.value);
+                    }}
+                  >
+                    {status.label}
+                  </p>
+                ))}
+              </div>
+
+              <div className="cursor-pointer" onClick={handleRemoveAllTodos}>
+                <p className="m-0 text-sm font-normal text-[#9495A5]">
+                  Clear Completed
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="absolute w-full h-full top-0 left-0 z-0">
-        <div className="w-full h-[300px] relative">
-          <div className="relative w-full h-full bg-[linear-gradient(225deg,_rgba(85,_150,_255,_0.8)_0%,_rgba(172,_45,_235,_0.8)_100%)] z-10" />
+        <div className="absolute w-full h-full top-0 left-0 z-0">
+          <div className="w-full h-[300px] relative">
+            <div className="relative w-full h-full bg-[linear-gradient(225deg,_rgba(85,_150,_255,_0.8)_0%,_rgba(172,_45,_235,_0.8)_100%)] z-10" />
 
-          <Image
-            src="/static/bg-image.png"
-            alt="Background Image"
-            fill
-            className="object-cover z-0"
-          />
+            <Image
+              src="/static/bg-image.png"
+              alt="Background Image"
+              fill
+              className="object-cover z-0"
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </HomeContext.Provider>
   );
 };
 
